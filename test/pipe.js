@@ -96,7 +96,7 @@ tape('simple pipe', function (t) {
       cb(null)
     },
 
-    final () {
+    final (_) {
       t.pass('final called')
       t.same(buffered, ['hello', 'world'])
       t.end()
@@ -163,6 +163,23 @@ tape('pipe to a transform object', function (t) {
       final (cb) {
         t.same(buffered, ['foox', 'barx'])
         cb()
+        t.end()
+      }
+    })
+})
+
+tape('pipe to async transform', function (t) {
+  const buffered = []
+  Stream.from(['foo', 'bar'])
+    .pipe({
+      transform: async (data) => `${data}x`
+    })
+    .pipe({
+      write: async (data) => {
+        buffered.push(data)
+      },
+      final: async () => {
+        t.same(buffered, ['foox', 'barx'])
         t.end()
       }
     })
