@@ -1,6 +1,6 @@
 const tape = require('tape')
 const compat = require('stream')
-const { Readable, Writable } = require('../')
+const { Readable, Writable, Stream } = require('../')
 
 tape('pipe to node stream', function (t) {
   const expected = [
@@ -131,4 +131,39 @@ tape('pipe with callback', function (t) {
   r.push('hello')
   r.push('world')
   r.push(null)
+})
+
+tape('pipe to an output object', function (t) {
+  const buffered = []
+  Stream.from(['hello', 'world']).pipe({
+    write (data, cb) {
+      buffered.push(data)
+      cb()
+    },
+    final (cb) {
+      t.same(buffered, ['hello', 'world'])
+      cb()
+      t.end()
+    }
+  })
+})
+
+tape('pipe to a transform object', function (t) {
+  const buffered = []
+  Stream.from(['foo', 'bar']).pipe({
+    transform (data, cb) {
+      cb(null, `${data}x`)
+    }
+  })
+    .pipe({
+      write (data, cb) {
+        buffered.push(data)
+        cb()
+      },
+      final (cb) {
+        t.same(buffered, ['foox', 'barx'])
+        cb()
+        t.end()
+      }
+    })
 })

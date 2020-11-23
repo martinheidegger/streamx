@@ -532,6 +532,29 @@ class Stream extends EventEmitter {
     // does nothing
   }
 
+  static from (data) {
+    if (typeof data === 'object') {
+      if (isStream(data)) {
+        return data
+      }
+      if ('transform' in data || 'flush' in data) {
+        return new Transform(data)
+      }
+      const readable = 'read' in data || 'mapReadable' in data || 'byteLengthReadable' in data
+      const writable = 'write' in data || 'writev' in data || 'final' in data || 'mapWritable' in data || 'byteLengthWritable' in data
+      if (readable && writable) {
+        return new Duplex(data)
+      }
+      if (writable) {
+        return new Writable(data)
+      }
+      if (readable) {
+        return new Readable(data)
+      }
+    }
+    return Readable.from(data)
+  }
+
   get readable () {
     return this._readableState !== null ? true : undefined
   }
@@ -604,6 +627,7 @@ class Readable extends Stream {
   }
 
   pipe (dest, cb) {
+    dest = Stream.from(dest)
     this._readableState.pipe(dest, cb)
     this._readableState.updateNextTick()
     return dest
@@ -823,7 +847,7 @@ class Transform extends Duplex {
     }
   }
 
-  _write (data, cb) {
+  _write (data) {
     if (this._readableState.buffered >= this._readableState.highWaterMark) {
       this._transformState.data = data
     } else {
