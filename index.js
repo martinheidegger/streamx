@@ -922,7 +922,16 @@ function defaultByteLength (data) {
 
 function noop () {}
 
+function pipeline (...streams) {
+  let result = Stream.from(streams[0])
+  for (let i = 1; i < streams.length; i++) {
+    result = result.pipe(streams[i])
+  }
+  return result
+}
+
 module.exports = {
+  pipeline,
   isStream,
   isStreamx,
   Stream,

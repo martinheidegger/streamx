@@ -1,6 +1,6 @@
 const tape = require('tape')
 const compat = require('stream')
-const { Readable, Writable, Stream } = require('../')
+const { Readable, Writable, Stream, pipeline } = require('../')
 
 tape('pipe to node stream', function (t) {
   const expected = [
@@ -175,12 +175,25 @@ tape('pipe to async transform', function (t) {
       transform: async (data) => `${data}x`
     })
     .pipe({
-      write: async (data) => {
-        buffered.push(data)
-      },
+      write: async (data) => buffered.push(data),
       final: async () => {
         t.same(buffered, ['foox', 'barx'])
         t.end()
       }
     })
+})
+
+tape('async pipelining', function (t) {
+  const buffered = []
+  pipeline(
+    ['foo', 'bar'],
+    { transform: async (data) => `${data}x` },
+    {
+      write: async (data) => buffered.push(data),
+      final: async () => {
+        t.same(buffered, ['foox', 'barx'])
+        t.end()
+      }
+    }
+  )
 })
